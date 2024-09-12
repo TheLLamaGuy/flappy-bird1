@@ -8,7 +8,7 @@ let soundDie = new Audio("assets/audio/sfx_die.mp3");
 let soundPoints = new Audio("assets/audio/sfx_point.mp3");
 
 function startGame() {
-    myGamePiece = new component(30, 30, "assets/pictures/smiley.gif", 10, 120, "image");
+    myGamePiece = new component(20, 20, "assets/pictures/smiley.gif", 10, 120, "image");
     myScore = new component("20px", "Consolas", "black", 360, 40, "text");
     myObstacles = [];
     myPoints = 0;
@@ -25,14 +25,13 @@ let myGameArea = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
         gameRunning = true;
-        time = 16;
+        time = 10 ; //use 16 for 60fps
         this.interval = setInterval(updateGameArea, time);
 
         // Handle keyboard jump (Spacebar)
         window.addEventListener('keydown', function (e) {
             myGameArea.keys = (myGameArea.keys || []);
             myGameArea.keys[e.keyCode] = true;
-
             if (e.keyCode === 82) { // 'R' key is pressed
                 resetGame();
             }
@@ -43,18 +42,24 @@ let myGameArea = {
         });
 
         // Handle touch for mobile jump
-        this.canvas.addEventListener('touchstart', function (e) {
-            e.preventDefault();
+        // Touch event handlers
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent default touch actions
+            // Ensure we handle only the first touch
             if (e.touches.length > 0) {
-                myGameArea.keys = (myGameArea.keys || [])
-                myGameArea.keys[32] = true;
+                myGameArea.keys = myGameArea.keys || [];
+                myGameArea.keys[32] = true; // Simulate space bar press
             }
         });
-        
-        this.canvas.addEventListener('touchend', function (e) {
-            myGameArea.keys[32] = false;
+
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault(); // Prevent default touch actions
+            // Stop simulating space bar press when touch ends
+            myGameArea.keys[32] = false; // Simulate space bar release
         });
-        
+
+        // Handle reset button click
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
     },
     clear: function () {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -81,7 +86,7 @@ function component(width, height, colour, x, y, type) {
     this.y = y;
     this.speedX = 0;
     this.speedY = 0;
-    this.gravity = 0.08;
+    this.gravity = 0.07;
     this.gravitySpeed = 0;
     this.bounce = 0.4;
 
@@ -137,7 +142,7 @@ function component(width, height, colour, x, y, type) {
 
 function checkJump() {
     if (myGameArea.keys && myGameArea.keys[32]) {
-        myGamePiece.gravitySpeed = -2;
+        myGamePiece.gravitySpeed = -1.25;
         soundJump.play();
     }
 }
@@ -162,7 +167,7 @@ function updateGameArea() {
     myGameArea.frameNo += 1;
 
     // Add new obstacles at regular intervals
-    if (myGameArea.frameNo === 1 || everyinterval(150)) {
+    if (myGameArea.frameNo === 1 || everyinterval(200)) { // this creates new obstacles every 200 frames, that is every 200x coordinates
         x = myGameArea.canvas.width;
         minHeight = 20;
         maxHeight = 200;
@@ -190,6 +195,8 @@ function updateGameArea() {
 
     for (let i = 0; i < myObstacles.length; i++) {
         if (myGamePiece.crashWith(myObstacles[i])) {
+            myGamePiece.image.src = "assets/pictures/angry.gif";
+            myGamePiece.update();
             myGameArea.stop();
             soundDie.play();
             return;
